@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#76111b">
+  <meta name="description" content="Portal Keanggotaan Pemuda Pancasila Digital PWA">
+  <title>Portal Anggota | Pemuda Pancasila</title>
+  
+  <!-- PWA Manifest & App Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  
+  <!-- CSS Modular -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  
+  <!-- Script Utama (ES6 Module) -->
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="brand">
+        <img src="assets/logo-pemuda-pancasila.png" alt="Logo Pemuda Pancasila" class="logo">
+        <div class="brand-copy">
+          <p class="eyebrow">Portal Keanggotaan</p>
+          <h1>Pemuda Pancasila</h1>
+          <p class="tagline">Bersatu, berkarya, dan berkontribusi untuk masyarakat.</p>
+        </div>
+      </div>
+
+      <!-- Navigasi Utama -->
+      <nav id="appNav" class="app-nav hidden" aria-label="Navigasi Utama">
+        <button class="nav-link active" data-target="homeSection">Beranda</button>
+        <button class="nav-link" data-target="profileSection">Profil Saya</button>
+        <button class="nav-link" data-target="eventsSection">Kegiatan</button>
+        <button class="nav-link" data-target="activitySection">Riwayat</button>
+      </nav>
+
+      <div class="header-right">
+        <!-- Notifikasi Bell -->
+        <div id="notifWrapper" class="notif-wrapper hidden">
+          <button id="notifBellBtn" class="bell-btn" type="button" aria-label="Notifikasi">
+            🔔 <span id="bellDot" class="bell-dot hidden"></span>
+          </button>
+          <div id="notifDropdown" class="notif-dropdown hidden">
+            <div class="notif-header">
+              <strong>Pemberitahuan Demo</strong>
+              <button id="markReadBtn" type="button" class="text-btn-sm">Tandai Dibaca</button>
+            </div>
+            <ul id="notifList" class="notif-list"></ul>
+          </div>
+        </div>
+
+        <!-- Tombol Instal PWA (Otomatis muncul jika browser mendukung) -->
+        <button id="pwaInstallBtn" class="btn btn-secondary btn-sm hidden" type="button">📱 Instal App</button>
+
+        <div class="header-label"><span class="status-dot"></span><span id="pwaStatusText">ONLINE</span></div>
+        <button id="navLogoutBtn" class="btn btn-secondary btn-sm hidden" type="button">Keluar</button>
+      </div>
+    </header>
+
+    <!-- Halaman Depan / Login & Registrasi -->
+    <main id="authLayout" class="main-layout fade-in">
+      <section class="welcome-panel">
+        <div>
+          <p class="eyebrow light">Selamat Datang</p>
+          <h2>Portal Anggota<br>Pemuda Pancasila</h2>
+          <p class="welcome-text">Masuk ke akun Anda atau daftarkan data anggota melalui formulir digital yang mudah digunakan.</p>
+          <div class="feature-list">
+            <div><span class="feature-icon">✓</span><span>Dukungan Aplikasi PWA Mobile</span></div>
+            <div><span class="feature-icon">✓</span><span>Formulir Terstruktur & Validasi Presisi</span></div>
+            <div><span class="feature-icon">✓</span><span>Sistem Ekspor & Impor Cadangan Data</span></div>
+          </div>
+        </div>
+        <div class="welcome-note"><span class="note-line"></span><span>Solidaritas · Integritas · Pengabdian</span></div>
+      </section>
+
+      <section class="form-panel">
+        <div class="tabs" role="tablist">
+          <button class="tab" id="loginTab" type="button" role="tab" aria-selected="true">Masuk</button>
+          <button class="tab" id="registerTab" type="button" role="tab" aria-selected="false">Registrasi</button>
+        </div>
+
+        <!-- Panel Login -->
+        <section id="loginPanel" class="panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Akses Anggota</p>
+            <h2>Selamat datang kembali</h2>
+            <p>Masukkan email dan kata sandi Anda.</p>
+          </div>
+          <form id="loginForm" action="#" onsubmit="return false;">
+            <div class="field">
+              <label for="loginEmail">Alamat email</label>
+              <input id="loginEmail" name="email" type="email" placeholder="nama@email.com" autocomplete="email" required>
+            </div>
+            <div class="field">
+              <label for="loginPassword">Kata sandi</label>
+              <div class="password-wrapper">
+                <input id="loginPassword" name="password" type="password" placeholder="Masukkan kata sandi" autocomplete="current-password" minlength="8" required>
+                <button type="button" class="toggle-pwd-btn" data-for="loginPassword">👁️</button>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Masuk ke Portal →</button>
+            <button class="text-button" type="button" id="goRegister">Belum punya akun? Daftar anggota</button>
+            <div class="status" id="loginStatus" role="status"></div>
+          </form>
+        </section>
+
+        <!-- Panel Registrasi -->
+        <section id="registerPanel" class="panel hidden">
+          <div class="panel-heading">
+            <p class="eyebrow">Pendaftaran Anggota</p>
+            <h2>Buat akun anggota</h2>
+            <p>Lengkapi informasi di bawah ini. Kolom bertanda * wajib diisi.</p>
+          </div>
+          <form id="registerForm" action="#" onsubmit="return false;">
+            <fieldset>
+              <legend>Data pribadi</legend>
+              <div class="form-grid">
+                <div class="field full">
+                  <label for="nama">Nama lengkap *</label>
+                  <input id="nama" name="nama" type="text" placeholder="Masukkan nama lengkap" minlength="3" maxlength="60" required>
+                </div>
+                <div class="field">
+                  <label for="email">Alamat email *</label>
+                  <input id="email" name="email" type="email" placeholder="nama@email.com" required>
+                </div>
+                <div class="field">
+                  <label for="tanggalLahir">Tanggal lahir *</label>
+                  <input id="tanggalLahir" name="tanggal_lahir" type="date" required>
+                </div>
+                <div class="field">
+                  <label for="password">Kata sandi *</label>
+                  <div class="password-wrapper">
+                    <input id="password" name="password" type="password" placeholder="Minimal 8 karakter" minlength="8" required>
+                    <button type="button" class="toggle-pwd-btn" data-for="password">👁️</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="konfirmasi">Konfirmasi kata sandi *</label>
+                  <div class="password-wrapper">
+                    <input id="konfirmasi" name="konfirmasi_password" type="password" placeholder="Ulangi kata sandi" minlength="8" required>
+                    <button type="button" class="toggle-pwd-btn" data-for="konfirmasi">👁️</button>
+                  </div>
+                </div>
+                <div class="field full">
+                  <span class="field-label">Jenis kelamin *</span>
+                  <div class="choice-row">
+                    <label class="choice"><input type="radio" name="jenis_kelamin" value="Laki-laki" required> Laki-laki</label>
+                    <label class="choice"><input type="radio" name="jenis_kelamin" value="Perempuan"> Perempuan</label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Kontak dan domisili</legend>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="telepon">Nomor HP *</label>
+                  <input id="telepon" name="telepon" type="tel" placeholder="08xxxxxxxxxx" pattern="08[0-9]{8,11}" required>
+                </div>
+                <div class="field">
+                  <label for="kodePos">Kode pos *</label>
+                  <input id="kodePos" name="kode_pos" type="text" placeholder="20111" pattern="[0-9]{5}" maxlength="5" required>
+                </div>
+                <div class="field full">
+                  <label for="alamat">Alamat lengkap *</label>
+                  <textarea id="alamat" name="alamat" rows="2" placeholder="Jalan, nomor rumah..." minlength="10" required></textarea>
+                </div>
+                <div class="field">
+                  <label for="kota">Kota/kabupaten *</label>
+                  <select id="kota" name="kota" required>
+                    <option value="">Pilih kota/kabupaten</option>
+                    <option>Medan</option>
+                    <option>Binjai</option>
+                    <option>Pematangsiantar</option>
+                    <option>Deli Serdang</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="usia">Usia</label>
+                  <input id="usia" name="usia" type="number" readonly placeholder="Otomatis">
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Preferensi</legend>
+              <div class="form-grid">
+                <div class="field full">
+                  <span class="field-label">Minat atau hobi</span>
+                  <div class="choice-row">
+                    <label class="choice"><input type="checkbox" name="hobi" value="Olahraga"> Olahraga</label>
+                    <label class="choice"><input type="checkbox" name="hobi" value="Kegiatan sosial"> Kegiatan sosial</label>
+                    <label class="choice"><input type="checkbox" name="hobi" value="Organisasi"> Organisasi</label>
+                  </div>
+                </div>
+                <div class="field full">
+                  <label for="foto">Foto profil (opsional)</label>
+                  <input id="foto" name="foto" type="file" accept=".jpg,.jpeg,.png">
+                </div>
+                <div class="field full">
+                  <label class="choice consent"><input type="checkbox" id="persetujuan" required> Saya menyatakan data benar. *</label>
+                </div>
+              </div>
+            </fieldset>
+
+            <button class="btn btn-primary btn-block" type="submit">Daftar Anggota →</button>
+            <div class="status" id="registerStatus"></div>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <!-- DASHBOARD ANGGOTA (SPA) -->
+    <main id="dashboardLayout" class="dashboard-container hidden">
+      
+      <!-- Beranda -->
+      <section id="homeSection" class="dashboard-section section-animate">
+        <div class="hero-banner">
+          <div class="hero-content">
+            <p class="today-date" id="currentDateDisplay"></p>
+            <h2 id="homeWelcomeName">Selamat Datang, Anggota!</h2>
+            <p class="welcome-text">Portal Keanggotaan Pemuda Pancasila Digital. Bersama-sama kita tingkatkan peranan pemuda dalam pembangunan, kegiatan sosial, serta pengabdian masyarakat.</p>
+            <button class="btn btn-secondary btn-sm" id="quickProfileBtn" type="button">Lihat Profil & Cetak Kartu →</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="dash-card card-hover">
+            <p class="dash-card-title">Ringkasan Sesi Demo</p>
+            <div class="status-summary">
+              <span class="badge badge-success">● Status: Akun Demo Aktif</span>
+              <p id="dashMemberEmail" class="dash-text-sm"></p>
+              <p id="dashMemberCity" class="dash-text-sm"></p>
+            </div>
+          </div>
+
+          <div class="dash-card card-hover">
+            <p class="dash-card-title">Cadangan & Manajemen Data</p>
+            <p class="dash-text-sm" style="margin-bottom: 12px;">Ekspor data ke JSON sebagai cadangan lokal atau impor kembali.</p>
+            <div style="display: flex; gap: 8px;">
+              <button id="exportDataBtn" class="btn btn-secondary btn-sm" type="button">📥 Ekspor JSON</button>
+              <label class="btn btn-secondary btn-sm" style="margin:0; cursor:pointer;">
+                📤 Impor JSON
+                <input type="file" id="importDataInput" accept=".json" style="display:none;">
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Profil & Kartu Anggota -->
+      <section id="profileSection" class="dashboard-section hidden">
+        <div class="panel-heading">
+          <p class="eyebrow">Identitas Digital</p>
+          <h2>Kartu Anggota Digital Demo</h2>
+        </div>
+
+        <div class="member-card-digital card-hover" id="printableCard">
+          <div class="card-demo-watermark">KARTU ANGGOTA DEMO</div>
+          <div id="memberHeaderCard" class="member-header-card"></div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <button id="printCardBtn" class="btn btn-primary btn-sm" type="button">🖨️ Cetak / Simpan Kartu Anggota</button>
+        </div>
+
+        <div id="memberGridDetails" class="member-grid-details"></div>
+
+        <div class="edit-profile-box card-hover">
+          <h3>Edit Informasi Profil</h3>
+          <form id="editProfileForm" action="#" onsubmit="return false;">
+            <div class="form-grid">
+              <div class="field">
+                <label for="editTelepon">Nomor HP</label>
+                <input id="editTelepon" name="telepon" type="tel" pattern="08[0-9]{8,11}" required>
+              </div>
+              <div class="field">
+                <label for="editKota">Kota/Kabupaten</label>
+                <select id="editKota" name="kota" required>
+                  <option>Medan</option>
+                  <option>Binjai</option>
+                  <option>Pematangsiantar</option>
+                  <option>Deli Serdang</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="editAlamat">Alamat Lengkap</label>
+                <textarea id="editAlamat" name="alamat" rows="2" required></textarea>
+              </div>
+              <div class="field full">
+                <label for="editFoto">Ganti Foto Profil (Opsional)</label>
+                <input id="editFoto" type="file" accept=".jpg,.jpeg,.png">
+              </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Simpan Perubahan</button>
+            <div class="status" id="editStatus"></div>
+          </form>
+        </div>
+
+        <div class="member-actions" style="margin-top: 24px;">
+          <button class="btn btn-secondary" id="openDeleteModalBtn" type="button">Hapus Akun Demo Ini</button>
+        </div>
+      </section>
+
+      <!-- Kegiatan -->
+      <section id="eventsSection" class="dashboard-section hidden">
+        <div class="panel-heading">
+          <p class="eyebrow">Agenda Organisasi (Data Contoh)</p>
+          <h2>Kegiatan & Program Kerja</h2>
+        </div>
+
+        <div class="filter-box">
+          <input type="text" id="eventSearch" placeholder="🔍 Cari kegiatan berdasarkan nama atau deskripsi...">
+        </div>
+
+        <div class="cards-grid" id="eventsContainer"></div>
+      </section>
+
+      <!-- Riwayat Aktivitas -->
+      <section id="activitySection" class="dashboard-section hidden">
+        <div class="panel-heading">
+          <p class="eyebrow">Jejak Aktivitas Lokal</p>
+          <h2>Riwayat Akun</h2>
+        </div>
+
+        <div id="activityTimeline" class="activity-timeline"></div>
+      </section>
+
+    </main>
+
+    <!-- Modal Hapus Akun -->
+    <div id="deleteModal" class="modal-overlay hidden">
+      <div class="modal-card fade-in">
+        <h3 style="margin-top:0; color:var(--red);">Hapus Akun Demo?</h3>
+        <p style="font-size:0.88rem; color:var(--muted); line-height:1.6;">Tindakan ini akan menghapus data keanggotaan Anda dari browser ini secara permanen.</p>
+        <div class="modal-actions">
+          <button id="cancelDeleteBtn" class="btn btn-secondary" type="button">Batal</button>
+          <button id="confirmDeleteBtn" class="btn btn-primary" type="button" style="background:var(--danger); border-color:var(--danger);">Ya, Hapus Akun</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <span>© Portal Anggota Pemuda Pancasila — Proyek pembelajaran PWA</span>
+      <span>Demo Front-End · PWA Ready</span>
+    </footer>
+    <p class="privacy-note"><strong>Penting:</strong> Jangan gunakan kata sandi asli. Data tersimpan di localStorage browser lokal Anda.</p>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+satu masalah penting yang perlu kamu perbaiki terlebih dahulu agar login benar-benar memakai database.
+1. Masalah utama: mode database masih dinonaktifkan
+Di js/config.js, konfigurasi saat ini masih seperti berikut:
+export const API_CONFIG = {
+    MODE_MOCK: true,
+    GAS_ENDPOINT_URL: "URL_GOOGLE_APPS_SCRIPT_KAMU"
+};
+
+MODE_MOCK: true membuat api.js menggunakan data Local Storage untuk login dan registrasi, bukan Google Sheets. Jadi, meskipun URL Apps Script sudah diisi, permintaan ke database tidak akan digunakan.
+Ubah menjadi:
+export const API_CONFIG = {
+    MODE_MOCK: false,
+    GAS_ENDPOINT_URL: "URL_DEPLOYMENT_APPS_SCRIPT_KAMU"
+};
+
+Pertahankan URL deployment milikmu yang sebenarnya. Setelah itu, pastikan deployment Google Apps Script sudah benar dan dapat diakses oleh website.
+2. Ada beberapa hal lain yang perlu diperbaiki
+A. Pemulihan sesi login belum sesuai
+Di js/auth.js, login menyimpan sesi hanya sebagai ID:
+safeSetStorage(SESSION_KEY, res.member.id);
+Namun, di js/app.js, saat halaman dibuka ulang, kode mencoba membaca sesi itu sebagai objek JSON dan mencari member.id. Akibatnya, login bisa berhasil, tetapi sesi tidak dipulihkan dengan benar setelah halaman di-refresh. app.js
+api.js
+Saran: simpan objek sesi secara konsisten, atau simpan ID lalu ambil ulang data anggota dari server. Untuk sistem yang lebih aman, gunakan sesi autentikasi yang diverifikasi server.
+B. Konfirmasi password belum divalidasi
+Form registrasi sudah mempunyai kolom konfirmasi password, tetapi processRegister() mengambil password utama tanpa membandingkannya dengan konfirmasi_password. auth.js
+Tambahkan pemeriksaan sebelum mengirim data:
+const password = String(formData.get("password") || "");
+const konfirmasi = String(
+  formData.get("konfirmasi_password") || ""
+);
+
+if (password !== konfirmasi) {
+  return {
+    success: false,
+    message: "Konfirmasi kata sandi tidak cocok."
+  };
+}
+
+Tempatkan pemeriksaan tersebut di awal processRegister(), sebelum data dikirim ke API.
+C. Password tidak boleh disimpan sebagai teks biasa
+Apps Script yang kamu kirim sebelumnya membandingkan password secara langsung dengan isi kolom password di Google Sheets. Ini tidak aman untuk data anggota sungguhan.
+Sebaiknya gunakan layanan autentikasi yang tepercaya atau mekanisme backend dengan penyimpanan hash password yang kuat. Jangan menganggap penyembunyian kolom password di spreadsheet sebagai perlindungan yang cukup.
+D. Ikon PWA belum memakai file PNG yang baru
+manifest.json saat ini masih mendefinisikan ikon melalui data SVG, sedangkan index.html menunjuk ke assets/icon-192.png untuk ikon Apple. manifest.json
+index.html
+Jika ingin menggunakan PNG yang kamu kirim, tempatkan file di folder assets/, lalu sesuaikan manifest.json agar menggunakan assets/icon-192.png dan assets/icon-512.png. Pastikan juga jalur file benar-benar cocok dengan struktur folder project.
+E. Data profil dan dashboard perlu diselaraskan
+Dashboard saat ini masih menggunakan data kegiatan dan pengumuman contoh, sedangkan fungsi ekspor dan impor membaca Local Storage. Jika Google Sheets menjadi sumber data utama, fungsi-fungsi tersebut perlu dibedakan dengan jelas agar pengguna tidak mengira data lokal sama dengan data di server. dashboard.js
+dashboard.js
+app.js
+3. Urutan perbaikan yang saya sarankan
+1. Aktifkan koneksi Google Apps Script dengan MODE_MOCK: false.
+2. Perbaiki penyimpanan dan pemulihan sesi login.
+3. Validasi konfirmasi password dan rapikan alur registrasi.
+4. Pastikan profil yang diedit tersimpan di Google Sheets dan tampil kembali setelah login.
+5. Rapikan ikon PWA dan hilangkan label “Demo” ketika fitur memang sudah siap digunakan.
+Rekomendasi saya: perbaiki koneksi database dan sesi login terlebih dahulu sebelum mengubah desain lagi. Struktur file kamu sudah cukup modular; tidak perlu menggabungkan semua JavaScript menjadi satu file.

@@ -1,0 +1,65 @@
+.main-layout {
+    display: grid; grid-template-columns: 0.85fr 1.15fr;
+    background: var(--paper); border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: var(--shadow-lg); overflow: hidden;
+    border: 1px solid rgba(141, 23, 35, 0.08);
+  }
+  
+  .welcome-panel {
+    position: relative; padding: 48px; color: #ffffff;
+    background: linear-gradient(145deg, #8d1723 0%, #68101a 60%, #31080e 100%);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  
+  .welcome-panel::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--gold), transparent); }
+  .welcome-panel h2 { margin: 0 0 16px; font: 800 2.2rem/1.18 "Manrope", sans-serif; letter-spacing: -0.04em; }
+  .welcome-text { color: rgba(255, 255, 255, 0.85); font-size: 0.92rem; line-height: 1.7; margin-bottom: 32px; }
+  
+  .feature-list { display: flex; flex-direction: column; gap: 14px; }
+  .feature-list > div { display: flex; align-items: center; gap: 12px; color: rgba(255, 255, 255, 0.9); font-size: 0.85rem; }
+  .feature-icon { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(199, 164, 91, 0.2); color: var(--gold-light); font-size: 0.75rem; font-weight: 800; }
+  
+  .welcome-note { display: flex; align-items: center; gap: 12px; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.6); font-size: 0.72rem; }
+  .note-line { width: 20px; height: 2px; background: var(--gold); }
+  
+  .form-panel { padding: 48px; background: #ffffff; }
+  
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; background: var(--soft-bg); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 32px; }
+  .tab { padding: 10px 16px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font-size: 0.85rem; font-weight: 700; transition: all 0.2s ease; }
+  .tab[aria-selected="true"] { color: #ffffff; background: var(--red); box-shadow: 0 4px 12px rgba(141, 23, 35, 0.25); }
+  
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .field label, .field-label { color: var(--ink); font-size: 0.8rem; font-weight: 700; }
+  
+  input:not([type="radio"]):not([type="checkbox"]), select, textarea {
+    width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; color: var(--ink); background: var(--soft-bg); transition: all 0.2s ease;
+  }
+  input:not([type="radio"]):not([type="checkbox"]):focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--red); background: #ffffff; box-shadow: 0 0 0 3px rgba(141, 23, 35, 0.12);
+  }
+  
+  .password-wrapper { position: relative; display: flex; align-items: center; }
+  .password-wrapper input { padding-right: 42px; }
+  .toggle-pwd-btn { position: absolute; right: 10px; border: 0; background: transparent; cursor: pointer; opacity: 0.6; font-size: 0.9rem; }
+  
+  fieldset { margin: 0 0 20px; padding: 20px; border: 1px solid var(--line); border-radius: 12px; }
+  legend { padding: 0 8px; color: var(--red); font: 800 0.8rem "Manrope", sans-serif; }
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 16px; }
+  .full { grid-column: 1 / -1; }
+  
+  .choice-row { display: flex; flex-wrap: wrap; gap: 12px 18px; padding-top: 4px; }
+  .choice { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.82rem; cursor: pointer; }
+  .choice input { accent-color: var(--red); }
+  
+  .text-button { display: block; margin: 16px auto 0; border: 0; color: var(--red); background: transparent; font-size: 0.82rem; font-weight: 700; }
+  .text-button:hover { text-decoration: underline; }
+  
+  .status { display: none; margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-size: 0.82rem; }
+  .status.show { display: block; }
+  .status.success { color: var(--success); background: #ebf7f0; border: 1px solid #c2e6cf; }
+  .status.error { color: var(--danger); background: #fdf0f1; border: 1px solid #f7c8cc; }
+  
+  @media (max-width: 840px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
