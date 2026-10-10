@@ -1,0 +1,36 @@
+/* Tampilan mobile: merah marun, putih, aksen emas */
+.card-hover { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 840px) {
+  body { padding: 0 0 calc(84px + env(safe-area-inset-bottom)); }
+  input, select, textarea { font-size: 16px !important; }
+  .btn { min-height: 48px; }
+  .site-header { position: sticky; top: 0; z-index: 50; backdrop-filter: none; background: #fff; border: 0; border-bottom: 3px solid var(--gold); border-radius: 0; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; flex-wrap: nowrap; }
+  .brand { gap: 10px; min-width: 0; }
+  .logo { width: 40px; height: 40px; }
+  .brand h1 { font-size: 1.05rem; }
+  .brand-copy .eyebrow, .tagline, .header-label { display: none; }
+  .header-right { margin-left: auto; gap: 8px; }
+  .app-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; background: var(--red-deep); border: 0; border-top: 3px solid var(--gold); border-radius: 0; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
+  .nav-link { min-height: 52px; padding: 6px 2px; color: var(--gold-light); font-size: 0.66rem; border-radius: 10px; }
+  .ni { display: block; font-size: 1.15rem; line-height: 1.2; }
+  .nav-link.active { background: var(--gold); color: var(--red-deep); }
+  .main-layout, .dashboard-container { border-radius: 0; box-shadow: none; border: 0; }
+  .welcome-panel { padding: 24px 20px; }
+  .welcome-panel h2 { font-size: 1.5rem; }
+  .welcome-text { margin-bottom: 0; }
+  .feature-list, .welcome-note { display: none; }
+  .form-panel { padding: 20px 16px; }
+  fieldset { padding: 14px; }
+  .dashboard-container { padding: 16px; }
+  .hero-banner { padding: 20px; }
+  .hero-content h2 { font-size: 1.3rem; }
+  .member-header-card { flex-wrap: wrap; }
+  .card-hover:hover { transform: none; box-shadow: none; }
+  .filter-box input { max-width: none; }
+  .toast-container { left: 12px; right: 12px; top: calc(8px + env(safe-area-inset-top)); }
+  .toast { min-width: 0; }
+  .notif-dropdown { position: fixed; left: 12px; right: 12px; width: auto; top: 64px; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; }
+  .site-footer { flex-direction: column; gap: 4px; text-align: center; }
+}

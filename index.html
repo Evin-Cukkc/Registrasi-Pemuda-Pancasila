@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#76111b">
   <meta name="description" content="Portal Keanggotaan Pemuda Pancasila Digital PWA">
   <title>Portal Anggota | Pemuda Pancasila</title>
@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/auth.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/mobile.css">
   
   <!-- Script Utama (ES6 Module) -->
   <script type="module" src="js/app.js"></script>
@@ -23,6 +24,7 @@
   <div class="page-shell">
     
     <!-- Toast Notifications -->
+    <div id="offlineBar" class="offline-bar hidden" role="status">Anda sedang offline. Perubahan tidak dapat disimpan.</div>
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <!-- Header -->
@@ -38,10 +40,11 @@
 
       <!-- Navigasi Utama -->
       <nav id="appNav" class="app-nav hidden" aria-label="Navigasi Utama">
-        <button class="nav-link active" data-target="homeSection">Beranda</button>
-        <button class="nav-link" data-target="profileSection">Profil Saya</button>
-        <button class="nav-link" data-target="eventsSection">Kegiatan</button>
-        <button class="nav-link" data-target="activitySection">Riwayat</button>
+        <button class="nav-link active" data-target="homeSection"><span class="ni">🏠</span>Beranda</button>
+        <button class="nav-link" data-target="profileSection"><span class="ni">👤</span>Profil Saya</button>
+        <button class="nav-link" data-target="eventsSection"><span class="ni">📅</span>Kegiatan</button>
+        <button class="nav-link" data-target="activitySection"><span class="ni">🕘</span>Riwayat</button>
+        <button class="nav-link hidden" id="adminNavBtn" data-target="adminSection"><span class="ni">🛡️</span>Admin</button>
       </nav>
 
       <div class="header-right">
@@ -52,7 +55,7 @@
           </button>
           <div id="notifDropdown" class="notif-dropdown hidden">
             <div class="notif-header">
-              <strong>Pemberitahuan Demo</strong>
+              <strong>Pengumuman</strong>
               <button id="markReadBtn" type="button" class="text-btn-sm">Tandai Dibaca</button>
             </div>
             <ul id="notifList" class="notif-list"></ul>
@@ -77,7 +80,7 @@
           <div class="feature-list">
             <div><span class="feature-icon">✓</span><span>Dukungan Aplikasi PWA Mobile</span></div>
             <div><span class="feature-icon">✓</span><span>Formulir Terstruktur & Validasi Presisi</span></div>
-            <div><span class="feature-icon">✓</span><span>Sistem Ekspor & Impor Cadangan Data</span></div>
+            <div><span class="feature-icon">✓</span><span>Profil Tersinkron ke Database</span></div>
           </div>
         </div>
         <div class="welcome-note"><span class="note-line"></span><span>Solidaritas · Integritas · Pengabdian</span></div>
@@ -96,7 +99,7 @@
             <h2>Selamat datang kembali</h2>
             <p>Masukkan email dan kata sandi Anda.</p>
           </div>
-          <form id="loginForm" action="#" onsubmit="return false;">
+          <form id="loginForm" action="#">
             <div class="field">
               <label for="loginEmail">Alamat email</label>
               <input id="loginEmail" name="email" type="email" placeholder="nama@email.com" autocomplete="email" required>
@@ -121,7 +124,8 @@
             <h2>Buat akun anggota</h2>
             <p>Lengkapi informasi di bawah ini. Kolom bertanda * wajib diisi.</p>
           </div>
-          <form id="registerForm" action="#" onsubmit="return false;">
+          <form id="registerForm" action="#" novalidate>
+            <div class="step-progress" id="regProgress"></div>
             <fieldset>
               <legend>Data pribadi</legend>
               <div class="form-grid">
@@ -214,7 +218,11 @@
               </div>
             </fieldset>
 
-            <button class="btn btn-primary btn-block" type="submit">Daftar Anggota →</button>
+            <div class="step-nav">
+              <button class="btn btn-secondary" type="button" id="stepPrev">← Kembali</button>
+              <button class="btn btn-primary" type="button" id="stepNext">Lanjut →</button>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit" id="regSubmit">Daftar Anggota →</button>
             <div class="status" id="registerStatus"></div>
           </form>
         </section>
@@ -235,25 +243,24 @@
           </div>
         </div>
 
+        <div class="quick-grid">
+          <button class="quick-btn" type="button" data-go="profileSection"><span>👤</span>Profil</button>
+          <button class="quick-btn" type="button" data-go="eventsSection"><span>📅</span>Kegiatan</button>
+          <button class="quick-btn" type="button" data-go="profileSection"><span>🪪</span>Kartu</button>
+          <button class="quick-btn" type="button" data-go="activitySection"><span>🕘</span>Riwayat</button>
+        </div>
+
         <div class="dashboard-grid">
+          <div class="dash-card">
+            <p class="dash-card-title">Pengumuman Terbaru</p>
+            <div id="homeAnnouncements"></div>
+          </div>
           <div class="dash-card card-hover">
-            <p class="dash-card-title">Ringkasan Sesi Demo</p>
+            <p class="dash-card-title">Ringkasan Akun</p>
             <div class="status-summary">
-              <span class="badge badge-success">● Status: Akun Demo Aktif</span>
+              <span class="badge badge-success" id="dashStatus">● Status: -</span>
               <p id="dashMemberEmail" class="dash-text-sm"></p>
               <p id="dashMemberCity" class="dash-text-sm"></p>
-            </div>
-          </div>
-
-          <div class="dash-card card-hover">
-            <p class="dash-card-title">Cadangan & Manajemen Data</p>
-            <p class="dash-text-sm" style="margin-bottom: 12px;">Ekspor data ke JSON sebagai cadangan lokal atau impor kembali.</p>
-            <div style="display: flex; gap: 8px;">
-              <button id="exportDataBtn" class="btn btn-secondary btn-sm" type="button">📥 Ekspor JSON</button>
-              <label class="btn btn-secondary btn-sm" style="margin:0; cursor:pointer;">
-                📤 Impor JSON
-                <input type="file" id="importDataInput" accept=".json" style="display:none;">
-              </label>
             </div>
           </div>
         </div>
@@ -263,11 +270,11 @@
       <section id="profileSection" class="dashboard-section hidden">
         <div class="panel-heading">
           <p class="eyebrow">Identitas Digital</p>
-          <h2>Kartu Anggota Digital Demo</h2>
+          <h2>Kartu Anggota Digital</h2>
         </div>
 
         <div class="member-card-digital card-hover" id="printableCard">
-          <div class="card-demo-watermark">KARTU ANGGOTA DEMO</div>
+          <div class="card-demo-watermark">KARTU ANGGOTA</div>
           <div id="memberHeaderCard" class="member-header-card"></div>
         </div>
 
@@ -279,7 +286,7 @@
 
         <div class="edit-profile-box card-hover">
           <h3>Edit Informasi Profil</h3>
-          <form id="editProfileForm" action="#" onsubmit="return false;">
+          <form id="editProfileForm" action="#">
             <div class="form-grid">
               <div class="field">
                 <label for="editTelepon">Nomor HP</label>
@@ -309,19 +316,20 @@
         </div>
 
         <div class="member-actions" style="margin-top: 24px;">
-          <button class="btn btn-secondary" id="openDeleteModalBtn" type="button">Hapus Akun Demo Ini</button>
+          <button class="btn btn-secondary" id="openDeleteModalBtn" type="button">Keluar dari Perangkat Ini</button>
         </div>
       </section>
 
       <!-- Kegiatan -->
       <section id="eventsSection" class="dashboard-section hidden">
         <div class="panel-heading">
-          <p class="eyebrow">Agenda Organisasi (Data Contoh)</p>
+          <p class="eyebrow">Agenda Organisasi</p>
           <h2>Kegiatan & Program Kerja</h2>
         </div>
 
-        <div class="filter-box">
-          <input type="text" id="eventSearch" placeholder="🔍 Cari kegiatan berdasarkan nama atau deskripsi...">
+        <div class="filter-box admin-filters">
+          <input type="search" id="eventSearch" placeholder="🔍 Cari kegiatan...">
+          <select id="eventCategory"><option value="">Semua kategori</option></select>
         </div>
 
         <div class="cards-grid" id="eventsContainer"></div>
@@ -334,7 +342,49 @@
           <h2>Riwayat Akun</h2>
         </div>
 
+        <h3 class="dash-card-title" style="margin-top:8px">Kegiatan Saya</h3>
+        <div id="myEventsList"></div>
+        <h3 class="dash-card-title" style="margin-top:24px">Aktivitas di Perangkat Ini</h3>
         <div id="activityTimeline" class="activity-timeline"></div>
+      </section>
+
+      <!-- Admin (tampil hanya untuk role admin; hak akses diperiksa di server) -->
+      <section id="adminSection" class="dashboard-section hidden">
+        <div class="panel-heading">
+          <p class="eyebrow">Khusus Pengurus</p>
+          <h2>Manajemen Anggota</h2>
+        </div>
+        <div class="admin-stats" id="adminStats"></div>
+        <div class="filter-box admin-filters">
+          <input type="search" id="adminSearch" placeholder="🔍 Cari nama, email, atau ID...">
+          <select id="adminStatusFilter">
+            <option value="">Semua status</option><option>Aktif</option><option>Menunggu</option><option>Nonaktif</option><option>Ditolak</option>
+          </select>
+        </div>
+        <div class="cards-grid" id="adminList"></div>
+
+        <div class="edit-profile-box" style="margin-top:28px">
+          <h3>Kelola Pengumuman</h3>
+          <div class="field"><label for="anJudul">Judul</label><input id="anJudul" type="text" maxlength="100"></div>
+          <div class="field"><label for="anIsi">Isi pengumuman</label><textarea id="anIsi" rows="3" maxlength="1500"></textarea></div>
+          <button id="anSave" class="btn btn-primary" type="button">Terbitkan Pengumuman</button>
+          <div id="adminAnnouncements" style="margin-top:16px"></div>
+        </div>
+
+        <div class="edit-profile-box" style="margin-top:28px">
+          <h3>Kelola Kegiatan</h3>
+          <input type="hidden" id="evId">
+          <div class="form-grid">
+            <div class="field full"><label for="evJudul">Judul kegiatan</label><input id="evJudul" type="text" maxlength="100"></div>
+            <div class="field"><label for="evKategori">Kategori</label><input id="evKategori" type="text" placeholder="Sosial, Pelatihan, ..." maxlength="30"></div>
+            <div class="field"><label for="evTanggal">Tanggal & jam (WIB)</label><input id="evTanggal" type="datetime-local"></div>
+            <div class="field"><label for="evLokasi">Lokasi</label><input id="evLokasi" type="text" maxlength="120"></div>
+            <div class="field"><label for="evKuota">Kuota (0 = tanpa batas)</label><input id="evKuota" type="number" min="0" value="0"></div>
+            <div class="field"><label for="evStatus">Status</label><select id="evStatus"><option>Dibuka</option><option>Ditutup</option><option>Selesai</option></select></div>
+            <div class="field full"><label for="evDeskripsi">Deskripsi</label><textarea id="evDeskripsi" rows="3" maxlength="1000"></textarea></div>
+          </div>
+          <div class="admin-actions"><button id="evSave" class="btn btn-primary" type="button">Simpan Kegiatan</button><button id="evReset" class="btn btn-secondary" type="button">Kosongkan</button></div>
+        </div>
       </section>
 
     </main>
@@ -342,21 +392,21 @@
     <!-- Modal Hapus Akun -->
     <div id="deleteModal" class="modal-overlay hidden">
       <div class="modal-card fade-in">
-        <h3 style="margin-top:0; color:var(--red);">Hapus Akun Demo?</h3>
-        <p style="font-size:0.88rem; color:var(--muted); line-height:1.6;">Tindakan ini akan menghapus data keanggotaan Anda dari browser ini secara permanen.</p>
+        <h3 style="margin-top:0; color:var(--red);">Keluar dari portal?</h3>
+        <p style="font-size:0.88rem; color:var(--muted); line-height:1.6;">Sesi Anda di perangkat ini akan ditutup. Data keanggotaan tetap tersimpan di database.</p>
         <div class="modal-actions">
           <button id="cancelDeleteBtn" class="btn btn-secondary" type="button">Batal</button>
-          <button id="confirmDeleteBtn" class="btn btn-primary" type="button" style="background:var(--danger); border-color:var(--danger);">Ya, Hapus Akun</button>
+          <button id="confirmDeleteBtn" class="btn btn-primary" type="button" style="background:var(--danger); border-color:var(--danger);">Ya, Keluar</button>
         </div>
       </div>
     </div>
 
     <!-- Footer -->
     <footer class="site-footer">
-      <span>© Portal Anggota Pemuda Pancasila — Proyek pembelajaran PWA</span>
-      <span>Demo Front-End · PWA Ready</span>
+      <span>© Portal Anggota Pemuda Pancasila — Portal Keanggotaan</span>
+      <span>PWA</span>
     </footer>
-    <p class="privacy-note"><strong>Penting:</strong> Jangan gunakan kata sandi asli. Data tersimpan di localStorage browser lokal Anda.</p>
+    <p class="privacy-note">Data anggota disimpan di server organisasi. Gunakan kata sandi yang unik dan jangan dibagikan.</p>
 
   </div>
 </body>

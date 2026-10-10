@@ -1,71 +1,36 @@
 import { API_CONFIG } from './config.js';
-import { getMembersLocal, saveMembersLocal } from './storage.js';
 
-export async function apiLogin(email, password) {
-  if (API_CONFIG.MODE_MOCK) {
-    const members = getMembersLocal();
-    const member = members.find(m => m.email === email && m.password === password);
-    if (!member) return { success: false, message: "Email atau kata sandi tidak cocok." };
-    return { success: true, member };
-  } else {
-    try {
-      const res = await fetch(API_CONFIG.GAS_ENDPOINT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'login', email, password })
-      });
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      return { success: false, message: "Gagal terhubung ke server Google Sheets." };
-    }
-  }
+// Semua data anggota sekarang hanya lewat server (Google Apps Script).
+async function post(action, payload = {}) {
+  if (!navigator.onLine) return { success: false, message: 'Anda sedang offline. Sambungkan internet lalu coba lagi.' };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const res = await fetch(API_CONFIG.GAS_ENDPOINT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, ...payload }),
+      signal: ctrl.signal
+    });
+    return await res.json();
+  } catch {
+    return { success: false, message: 'Tidak dapat terhubung ke server. Periksa koneksi Anda.' };
+  } finally { clearTimeout(timer); }
 }
 
-export async function apiRegister(memberData) {
-  if (API_CONFIG.MODE_MOCK) {
-    const members = getMembersLocal();
-    if (members.some(m => m.email === memberData.email)) {
-      return { success: false, message: "Email ini sudah terdaftar." };
-    }
-    members.push(memberData);
-    saveMembersLocal(members);
-    return { success: true, member: memberData };
-  } else {
-    try {
-      const res = await fetch(API_CONFIG.GAS_ENDPOINT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'register', data: memberData })
-      });
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      return { success: false, message: "Gagal mendaftar ke server Google Sheets." };
-    }
-  }
-}
-
-export async function apiUpdateProfile(memberId, updateFields) {
-  if (API_CONFIG.MODE_MOCK) {
-    const members = getMembersLocal();
-    const idx = members.findIndex(m => m.id === memberId);
-    if (idx === -1) return { success: false, message: "Profil tidak ditemukan." };
-
-    members[idx] = { ...members[idx], ...updateFields };
-    saveMembersLocal(members);
-    return { success: true, member: members[idx] };
-  } else {
-    try {
-      const res = await fetch(API_CONFIG.GAS_ENDPOINT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'updateProfile', memberId, data: updateFields })
-      });
-      const data = await res.json();
-      return data; // Diharapkan mengembalikan { success: true, member: updatedMember } atau pesan sukses
-    } catch (err) {
-      return { success: false, message: "Gagal memperbarui profil di server." };
-    }
-  }
-}
+export const apiLogin = (email, password) => post('login', { email, password });
+export const apiRegister = (data) => post('register', { data });
+export const apiLogout = (token) => post('logout', { token });
+export const apiGetProfile = (token) => post('getProfile', { token });
+export const apiUpdateProfile = (token, data) => post('updateProfile', { token, data });
+export const apiAdminList = (token, q, status) => post('adminListMembers', { token, q, status });
+export const apiAdminSetStatus = (token, memberId, status) => post('adminUpdateMember', { token, memberId, status });
+export const apiGetEvents = (token) => post('getEvents', { token });
+export const apiRegisterEvent = (token, eventId) => post('registerEvent', { token, eventId });
+export const apiCancelEvent = (token, eventId) => post('cancelEvent', { token, eventId });
+export const apiMyRegistrations = (token) => post('myRegistrations', { token });
+export const apiAdminSaveEvent = (token, event) => post('adminSaveEvent', { token, event });
+export const apiAdminRegistrants = (token, eventId) => post('adminRegistrants', { token, eventId });
+export const apiGetAnnouncements = (token) => post('getAnnouncements', { token });
+export const apiAdminSaveAnnouncement = (token, judul, isi) => post('adminSaveAnnouncement', { token, judul, isi });
+export const apiAdminDeleteAnnouncement = (token, id) => post('adminDeleteAnnouncement', { token, id });

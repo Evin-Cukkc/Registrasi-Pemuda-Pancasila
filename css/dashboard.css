@@ -68,3 +68,47 @@
   #printableCard, #printableCard * { visibility: visible; }
   #printableCard { position: absolute; left: 0; top: 0; width: 100%; border: 2px solid var(--gold); }
 }
+/* Admin */
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.admin-stats .dash-card { padding: 12px 14px; border-top: 3px solid var(--gold); display: flex; flex-direction: column; }
+.admin-stats strong { font: 800 1.4rem "Manrope", sans-serif; color: var(--red); }
+.admin-filters { display: flex; gap: 10px; flex-wrap: wrap; }
+.admin-filters input { flex: 1 1 220px; }
+.admin-filters select { flex: 0 1 170px; }
+#myEventsList p { margin: 0 0 6px; overflow-wrap: anywhere; }
+.admin-member { display: block; }
+.admin-member summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer; min-height: 40px; }
+.admin-info { margin-top: 10px; }
+.admin-info p { margin: 0 0 6px; overflow-wrap: anywhere; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.admin-actions select { flex: 1; }
+
+/* Tahap 4: wizard, kartu kegiatan, skeleton, beranda, kartu anggota */
+.step-bar { display: flex; gap: 6px; margin-bottom: 6px; }
+.step-bar span { flex: 1; height: 6px; border-radius: 3px; background: var(--line); }
+.step-bar span.on { background: var(--red); }
+.step-progress { margin-bottom: 14px; }
+.step-nav { display: flex; gap: 10px; margin-top: 6px; }
+.step-nav .btn { flex: 1; }
+.date-box { flex: 0 0 52px; text-align: center; background: var(--red); color: #fff; border-radius: 10px; padding: 6px 0; border-bottom: 3px solid var(--gold); line-height: 1.15; }
+.date-box b { display: block; font: 800 1.2rem "Manrope", sans-serif; }
+.date-box span { font-size: 0.7rem; text-transform: uppercase; color: var(--gold-light); }
+.event-card summary { justify-content: flex-start; }
+.ev-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ev-title small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skeleton { height: 72px; border-radius: 12px; background: linear-gradient(90deg, #f1ebe8 25%, #fbf8f6 50%, #f1ebe8 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+.ann-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.ann-item p { margin: 4px 0; font-size: 0.85rem; color: var(--muted); }
+.ann-item small { color: var(--muted); }
+.quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.quick-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 4px; border: 1px solid var(--line); border-bottom: 3px solid var(--gold); border-radius: 12px; background: var(--soft-bg); color: var(--red); font-weight: 700; font-size: 0.75rem; }
+.quick-btn span { font-size: 1.4rem; }
+.ni { display: none; }
+.member-card-digital { background: linear-gradient(135deg, var(--red) 0%, var(--red-deep) 100%); border: 2px solid var(--gold); color: #fff; padding: 34px 18px 18px; box-shadow: 0 10px 24px rgba(49, 8, 14, 0.25); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.member-card-digital h3 { color: #fff; }
+.member-card-digital p { color: var(--gold-light) !important; }
+.member-card-digital .badge { background: var(--gold); color: var(--red-deep); }
+.card-demo-watermark { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+
+.offline-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 10000; padding: calc(6px + env(safe-area-inset-top)) 12px 6px; background: var(--red-deep); color: var(--gold-light); border-bottom: 2px solid var(--gold); text-align: center; font-size: 0.8rem; font-weight: 700; }

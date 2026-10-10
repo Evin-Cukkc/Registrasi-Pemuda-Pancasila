@@ -1,12 +1,28 @@
-import { SESSION_KEY, NOTIF_KEY, STORAGE_KEY } from './config.js';
-import { safeGetStorage, safeSetStorage, safeRemoveStorage, getMembersLocal, saveMembersLocal, addActivityLog } from './storage.js';
-import { showToast, showStatus } from './ui.js';
-import { processLogin, processRegister, readFileAsDataURL, calculateAge } from './auth.js';
-import { navigateToSection, renderDashboard, setupNotifications } from './dashboard.js';
-import { apiUpdateProfile } from './api.js';
+import { SESSION_KEY, NOTIF_KEY } from './config.js';
+import { safeSetStorage, safeRemoveStorage, addActivityLog } from './storage.js';
+import { showToast, showStatus, withBusy } from './ui.js';
+import { initWizard } from './wizard.js';
+import { clearEventsCache } from './events.js';
+import { markAllRead } from './announcements.js';
+import { processLogin, processRegister, resizeImage, calculateAge, saveSession, getSession } from './auth.js';
+import { navigateToSection, renderDashboard } from './dashboard.js';
+import { apiUpdateProfile, apiGetProfile, apiLogout } from './api.js';
+
+// Logout: cabut token di server (maks 3 detik), lalu hapus sesi di perangkat
+async function logout() {
+  const s = getSession();
+  if (s) await Promise.race([apiLogout(s.token), new Promise(r => setTimeout(r, 3000))]);
+  safeRemoveStorage(SESSION_KEY);
+  clearEventsCache();
+  location.reload();
+}
 
 // Registrasi Service Worker untuk PWA
 if ('serviceWorker' in navigator) {
+  const hadSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadSW) showToast('Versi baru tersedia. Muat ulang halaman untuk memakainya.', 'info');
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then(() => console.log('PWA Service Worker terdaftar'))
@@ -24,14 +40,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const notifWrapper = document.getElementById("notifWrapper");
   const pwaInstallBtn = document.getElementById("pwaInstallBtn");
   const pwaStatusText = document.getElementById("pwaStatusText");
+  initWizard();
+  if (!navigator.onLine) document.getElementById("offlineBar").classList.remove("hidden");
+  const logo = document.querySelector(".logo"); // pengganti onerror inline (kompatibel dengan CSP)
+  if (logo) {
+    const hideLogo = () => { logo.style.visibility = "hidden"; };
+    if (logo.complete && !logo.naturalWidth) hideLogo();
+    logo.addEventListener("error", hideLogo);
+  }
+  document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () =>
+    document.querySelector(`.nav-link[data-target="${b.dataset.go}"]`).click()));
 
   // Deteksi Status Online / Offline
   window.addEventListener('online', () => {
     pwaStatusText.textContent = "ONLINE";
+    document.getElementById("offlineBar").classList.add("hidden");
     showToast("Koneksi terhubung kembali.", "success");
   });
   window.addEventListener('offline', () => {
     pwaStatusText.textContent = "OFFLINE";
+    document.getElementById("offlineBar").classList.remove("hidden");
     showToast("Anda sedang menggunakan mode offline.", "error");
   });
 
@@ -110,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = document.getElementById("loginPassword").value;
     
     showToast("Memproses masuk ke database...", "info");
-    const res = await processLogin(email, password);
+    const res = await withBusy(e.submitter, "Memproses...", () => processLogin(email, password));
 
     if (res.success && res.member) {
       authLayout.classList.add("hidden");
@@ -135,11 +163,11 @@ document.addEventListener("DOMContentLoaded", () => {
     let photoBase64 = "";
 
     if (photoInput.files[0]) {
-      try { photoBase64 = await readFileAsDataURL(photoInput.files[0]); } catch {}
+      try { photoBase64 = await resizeImage(photoInput.files[0]); } catch {}
     }
 
     showToast("Mendaftarkan data ke Google Sheets...", "info");
-    const res = await processRegister(formData, photoBase64);
+    const res = await withBusy(e.submitter, "Mendaftarkan...", () => processRegister(formData, photoBase64));
     if (res.success) {
       document.getElementById("registerForm").reset();
       document.getElementById("loginTab").click();
@@ -158,51 +186,37 @@ document.addEventListener("DOMContentLoaded", () => {
     window.print();
   });
 
-  // Ekspor JSON (Opsional Cadangan Lokal)
-  document.getElementById("exportDataBtn").addEventListener("click", () => {
-    const sessionRaw = safeGetStorage(SESSION_KEY);
-    if (!sessionRaw) return;
-    const blob = new Blob([sessionRaw], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `backup-profil-anggota-${Date.now()}.json`;
-    a.click();
-    showToast("Profil berhasil diekspor.", "success");
-  });
-
-  // Edit Profil
+  // Edit Profil: dianggap berhasil hanya jika server mengembalikan data anggota terbaru
   document.getElementById("editProfileForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const sessionRaw = safeGetStorage(SESSION_KEY);
-    if (!sessionRaw) return;
-    
-    let currentMember;
-    try { currentMember = JSON.parse(sessionRaw); } catch { return; }
-
-    const updateFields = {
-      telepon: document.getElementById("editTelepon").value,
+    const session = getSession();
+    if (!session) { showToast("Sesi berakhir. Silakan masuk kembali.", "error"); return; }
+    const btn = e.submitter; if (btn) btn.disabled = true;
+    const fields = {
+      telepon: document.getElementById("editTelepon").value.trim(),
       kota: document.getElementById("editKota").value,
-      alamat: document.getElementById("editAlamat").value
+      alamat: document.getElementById("editAlamat").value.trim()
     };
-
-    const editFoto = document.getElementById("editFoto");
-    if (editFoto.files[0]) {
-      try { updateFields.foto = await readFileAsDataURL(editFoto.files[0]); } catch {}
+    const file = document.getElementById("editFoto").files[0];
+    if (file) {
+      try { fields.foto = await resizeImage(file); }
+      catch { showToast("File foto tidak valid.", "error"); if (btn) btn.disabled = false; return; }
     }
-
-    showToast("Memperbarui profil di server...", "info");
-    const res = await apiUpdateProfile(currentMember.id, updateFields);
-    if (res.success) {
-      const updatedMember = { ...currentMember, ...updateFields };
-      if (res.member && res.member.foto) updatedMember.foto = res.member.foto;
-      
-      safeSetStorage(SESSION_KEY, JSON.stringify(updatedMember));
-      addActivityLog(currentMember.id, "Memperbarui data profil");
-      renderDashboard(updatedMember);
-      showToast("Profil berhasil diperbarui!", "success");
+    showToast("Menyimpan ke database...", "info");
+    const res = await apiUpdateProfile(session.token, fields);
+    if (btn) btn.disabled = false;
+    if (res.success && res.member) {
+      saveSession(session.token, res.member);
+      addActivityLog(res.member.id, "Memperbarui data profil");
+      renderDashboard(res.member);
+      document.getElementById("editFoto").value = "";
+      showToast("Profil tersimpan di database.", "success");
+    } else if (res.code === "UNAUTHORIZED") {
+      safeRemoveStorage(SESSION_KEY);
+      showToast(res.message, "error");
+      setTimeout(() => location.reload(), 1200);
     } else {
-      showToast(res.message || "Gagal memperbarui profil.", "error");
+      showToast(res.message || "Gagal menyimpan profil.", "error");
     }
   });
 
@@ -212,16 +226,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("markReadBtn").addEventListener("click", () => {
-    safeSetStorage(NOTIF_KEY, "true");
-    setupNotifications();
-    showToast("Notifikasi ditandai dibaca.");
+    markAllRead();
+    showToast("Pengumuman ditandai dibaca.");
   });
 
   // Logout & Modal
-  navLogoutBtn.addEventListener("click", () => {
-    safeRemoveStorage(SESSION_KEY);
-    location.reload();
-  });
+  navLogoutBtn.addEventListener("click", logout);
 
   document.getElementById("openDeleteModalBtn").addEventListener("click", () => {
     document.getElementById("deleteModal").classList.remove("hidden");
@@ -231,27 +241,22 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("deleteModal").classList.add("hidden");
   });
 
-  document.getElementById("confirmDeleteBtn").addEventListener("click", () => {
-    safeRemoveStorage(SESSION_KEY);
-    showToast("Sesi akun ditutup.");
-    location.reload();
-  });
+  document.getElementById("confirmDeleteBtn").addEventListener("click", logout);
 
-  // Pemulihan Sesi (Restore Session) saat halaman dimuat ulang
-  const savedSession = safeGetStorage(SESSION_KEY);
-  if (savedSession) {
-    try {
-      const member = JSON.parse(savedSession);
-      if (member && member.id) {
-        authLayout.classList.add("hidden");
-        dashboardLayout.classList.remove("hidden");
-        appNav.classList.remove("hidden");
-        navLogoutBtn.classList.remove("hidden");
-        notifWrapper.classList.remove("hidden");
-        renderDashboard(member);
-      }
-    } catch {
-      safeRemoveStorage(SESSION_KEY);
-    }
+  // Pemulihan sesi: tampilkan cache lokal, lalu segarkan dari server
+  const session = getSession();
+  if (session) {
+    authLayout.classList.add("hidden");
+    dashboardLayout.classList.remove("hidden");
+    appNav.classList.remove("hidden");
+    navLogoutBtn.classList.remove("hidden");
+    notifWrapper.classList.remove("hidden");
+    renderDashboard(session.member);
+    apiGetProfile(session.token).then(res => {
+      if (res.success && res.member) { saveSession(session.token, res.member); renderDashboard(res.member); }
+      else if (res.code === "UNAUTHORIZED") { safeRemoveStorage(SESSION_KEY); location.reload(); }
+    });
+  } else {
+    safeRemoveStorage(SESSION_KEY); // hapus sesi format lama
   }
 });

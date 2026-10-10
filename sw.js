@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pp-pwa-v1.1';
+const CACHE_NAME = 'pp-pwa-v3';
 
 // Daftar seluruh aset statis lokal yang wajib di-precache
 const ASSETS_TO_CACHE = [
@@ -8,12 +8,17 @@ const ASSETS_TO_CACHE = [
   './css/main.css',
   './css/auth.css',
   './css/dashboard.css',
+  './css/mobile.css',
   './js/config.js',
   './js/storage.js',
   './js/api.js',
   './js/ui.js',
   './js/auth.js',
   './js/dashboard.js',
+  './js/admin.js',
+  './js/events.js',
+  './js/announcements.js',
+  './js/wizard.js',
   './js/app.js',
   './assets/logo-pemuda-pancasila.png',
   './assets/icon-192.png',
@@ -81,25 +86,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // B. STRATEGI: STALE-WHILE-REVALIDATE (Untuk Aset Statis: CSS, JS, Gambar)
+  // B. NETWORK FIRST untuk aset statis agar perbaikan kode langsung terpakai; cache sebagai cadangan offline
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch((err) => {
-          console.debug('[SW] Gagal mengambil aset terbaru dari network:', err);
-        });
-
-      // Kembalikan cache segera jika ada (Fast), jika tidak ada tunggu hasil fetch network
-      return cachedResponse || fetchPromise;
-    })
+    fetch(event.request).then((res) => {
+      if (res && res.status === 200) {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
+      }
+      return res;
+    }).catch(() => caches.match(event.request))
   );
 });

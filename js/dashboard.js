@@ -1,5 +1,7 @@
-import { DUMMY_EVENTS, DUMMY_NEWS, NOTIF_KEY } from './config.js';
+import { initEvents } from './events.js';
+import { initAnnouncements } from './announcements.js';
 import { createDetailItem } from './ui.js';
+import { setupAdmin } from './admin.js';
 import { getActivityLogs, safeGetStorage } from './storage.js';
 
 export function navigateToSection(targetId) {
@@ -57,14 +59,23 @@ export function renderDashboard(member) {
   idText.style.margin = "0";
   idText.style.color = "var(--muted)";
   idText.style.fontSize = "0.85rem";
-  idText.textContent = `ID DEMO: PP-DEMO-${member.id.slice(0, 6).toUpperCase()}`;
+  idText.textContent = `ID Anggota: ${member.id}`;
 
   const badge = document.createElement("span");
   badge.className = "badge badge-success";
-  badge.textContent = "● Akun Demo Aktif";
+  badge.textContent = `● ${member.status || "Terdaftar"}`;
+  const dashStatus = document.getElementById("dashStatus");
+  if (dashStatus) dashStatus.textContent = `● Status: ${member.status || "Terdaftar"}`;
 
   info.appendChild(h3);
   info.appendChild(idText);
+  const yr = member.dibuat ? new Date(member.dibuat).getFullYear() : NaN;
+  if (yr) {
+    const since = document.createElement("p");
+    since.style.cssText = "margin:0 0 6px;font-size:0.8rem";
+    since.textContent = `Anggota sejak ${yr}`;
+    info.appendChild(since);
+  }
   info.appendChild(badge);
   headerCard.appendChild(info);
 
@@ -74,7 +85,7 @@ export function renderDashboard(member) {
   grid.appendChild(createDetailItem("Email:", member.email));
   grid.appendChild(createDetailItem("No. Telepon:", member.telepon));
   grid.appendChild(createDetailItem("Kota/Kabupaten:", member.kota));
-  grid.appendChild(createDetailItem("Usia:", `${member.usia} Tahun`));
+  grid.appendChild(createDetailItem("Usia:", member.usia ? `${member.usia} Tahun` : "-"));
   grid.appendChild(createDetailItem("Jenis Kelamin:", member.jenis_kelamin));
   grid.appendChild(createDetailItem("Minat/Hobi:", member.hobi && member.hobi.length ? member.hobi.join(", ") : "-"));
 
@@ -82,36 +93,10 @@ export function renderDashboard(member) {
   alm.classList.add("full-width");
   grid.appendChild(alm);
 
-  renderEvents(DUMMY_EVENTS);
+  initEvents(member);
   renderActivityLogs(member.id);
-  setupNotifications();
-}
-
-export function renderEvents(eventsList) {
-  const eventsContainer = document.getElementById("eventsContainer");
-  eventsContainer.innerHTML = "";
-
-  if (!eventsList.length) {
-    eventsContainer.innerHTML = "<p style='grid-column: 1/-1; color: var(--muted); padding: 16px; text-align: center;'>Tidak ada kegiatan yang cocok.</p>";
-    return;
-  }
-
-  eventsList.forEach(ev => {
-    const card = document.createElement("div");
-    card.className = "card-item card-hover";
-    card.innerHTML = `
-      <div>
-        <span class="badge ${ev.status === 'Selesai' ? '' : 'badge-success'}">${ev.status} [DEMO]</span>
-        <h3>${ev.judul}</h3>
-        <p>${ev.deskripsi}</p>
-      </div>
-      <div class="card-meta">
-        <span class="card-date">📅 ${ev.tanggal}</span>
-        <span>📍 ${ev.lokasi}</span>
-      </div>
-    `;
-    eventsContainer.appendChild(card);
-  });
+  initAnnouncements(member);
+  setupAdmin(member);
 }
 
 export function renderActivityLogs(memberId) {
@@ -133,21 +118,4 @@ export function renderActivityLogs(memberId) {
     `;
     timeline.appendChild(item);
   });
-}
-
-export function setupNotifications() {
-  const isRead = safeGetStorage(NOTIF_KEY) === "true";
-  const bellDot = document.getElementById("bellDot");
-  const notifList = document.getElementById("notifList");
-
-  if (bellDot) bellDot.classList.toggle("hidden", isRead);
-
-  if (notifList) {
-    notifList.innerHTML = "";
-    DUMMY_NEWS.forEach(nw => {
-      const li = document.createElement("li");
-      li.textContent = `📣 ${nw.judul} (${nw.tanggal})`;
-      notifList.appendChild(li);
-    });
-  }
 }

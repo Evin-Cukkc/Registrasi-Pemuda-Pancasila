@@ -1,5 +1,5 @@
 import { apiLogin, apiRegister } from './api.js';
-import { safeSetStorage, addActivityLog } from './storage.js';
+import { safeSetStorage, safeGetStorage, addActivityLog } from './storage.js';
 import { SESSION_KEY } from './config.js';
 
 export function calculateAge(dateString) {
@@ -56,12 +56,42 @@ export async function processRegister(formData, photoBase64) {
   return res;
 }
 
+export function saveSession(token, member) {
+  const { password, ...safe } = member || {};
+  safeSetStorage(SESSION_KEY, JSON.stringify({ token, member: safe }));
+}
+
+export function getSession() {
+  try {
+    const s = JSON.parse(safeGetStorage(SESSION_KEY));
+    return s && s.token && s.member && s.member.id ? s : null;
+  } catch { return null; }
+}
+
+// Perkecil foto (maks 256px) agar muat di satu sel Google Sheets (batas 50.000 karakter)
+export function resizeImage(file, max = 256) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak valid')); };
+    img.src = url;
+  });
+}
+
 export async function processLogin(email, password) {
-  const res = await apiLogin(email, password);
-  if (res.success && res.member) {
-    // Simpan objek sesi lengkap agar tidak error saat pemulihan halaman
-    safeSetStorage(SESSION_KEY, JSON.stringify(res.member));
+  const res = await apiLogin(String(email).trim().toLowerCase(), password);
+  if (res.success && res.token && res.member) {
+    saveSession(res.token, res.member);
     addActivityLog(res.member.id, "Berhasil masuk ke portal");
+    return res;
   }
-  return res;
+  return res.success ? { success: false, message: "Respons server tidak lengkap. Periksa deployment Apps Script." } : res;
 }

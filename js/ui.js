@@ -33,3 +33,20 @@ export function showToast(message, type = "info") {
     div.appendChild(sp);
     return div;
   }
+
+export function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+export function skeleton(box, n = 3) {
+  box.replaceChildren(...Array.from({ length: n }, () => el('div', 'skeleton')));
+}
+
+export async function withBusy(btn, label, fn) {
+  const t = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = label; }
+  try { return await fn(); } finally { if (btn) { btn.disabled = false; btn.textContent = t; } }
+}
